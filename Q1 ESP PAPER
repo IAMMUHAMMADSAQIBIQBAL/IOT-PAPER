@@ -1,0 +1,67 @@
+ #include <ESP8266WiFi.h>
+#include <DHT.h>
+#include <ThingSpeak.h>
+
+int LED1 = D1;   //  red LED
+int LED2 = D2;   //  Green LED       
+int LED3 = D3;   //  Yellow LED
+int LED4 = D4;   //  Blue LED
+
+DHT dht(D5, DHT11);
+WiFiClient client;
+long myChannelNumber = 1576970;
+const char myWriteAPIKey[] = "";
+const char myReadAPIKey[] = "";
+
+// The SetUp Function:
+void setup() {
+  Serial.begin(9600);
+  WiFi.begin("", "");     //here insert WiFi-name and Password between these double Qoumas.
+  while(WiFi.status() != WL_CONNECTED) 
+  {
+    delay(200);
+    Serial.print("..");
+  }
+  Serial.println();
+  Serial.println("NodeMCU is connected!");
+  Serial.println(WiFi.localIP());
+  pinMode(LED1,OUTPUT);    
+  pinMode(LED2,OUTPUT); 
+  pinMode(LED3,OUTPUT); 
+  pinMode(LED4,OUTPUT); // pin that will blink to your heartbeat!
+  Serial.begin(9600);         // Set's up Serial Communication at certain speed.
+  dht.begin();
+  ThingSpeak.begin(client);
+}
+
+// The Main Loop Function
+void loop() {
+
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+ 
+  Serial.println("Temperature: " + (String) t);  // Assign this value to the "Signal" variable.
+  Serial.println("Humidity: " + (String) h);
+  ThingSpeak.writeField(myChannelNumber, 1, t, myWriteAPIKey);
+  ThingSpeak.writeField(myChannelNumber, 2, h, myWriteAPIKey);
+  
+  
+   if(t < 20 && t <= 40){                          // If the signal is above "550", then "turn-on" Arduino's on-Board LED.
+     Serial.println("Temperture is OK");
+     digitalWrite(LED2, HIGH);
+     digitalWrite(LED3, HIGH);
+     digitalWrite(LED1, LOW);
+     digitalWrite(LED4, LOW);
+   } 
+   else if (t < 41 && t <= 60){
+     Serial.println("Temperature Abnormal, coling System ON"); //  Else, the sigal must be below "550", so "turn-off" this LED.
+     digitalWrite(LED2, LOW);
+     digitalWrite(LED3, LOW);
+     digitalWrite(LED1, HIGH);
+     digitalWrite(LED4, HIGH);
+   }
+
+delay(10);
+
+
+}
